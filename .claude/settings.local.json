@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.labocenter.cl)",
+      "WebFetch(domain:labocenter.cl)",
+      "Bash(npm -v)",
+      "Bash(echo \"npm: $\\(npm -v 2>/dev/null || echo NO\\)\")",
+      "Bash(pnpm -v)",
+      "Bash(echo \"pnpm: $\\(pnpm -v 2>/dev/null || echo NO\\)\")",
+      "Bash(corepack -v)",
+      "Bash(git init *)",
+      "Bash(git branch *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm -r --filter \"@labocenter/*\" typecheck)",
+      "Bash(pnpm -r --filter \"@labocenter/*\" test)",
+      "Bash(pnpm -r --filter \"@labocenter/*\" lint)",
+      "Bash(./node_modules/.bin/turbo --version)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm build *)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(git add *)"
+    ]
+  }
+}

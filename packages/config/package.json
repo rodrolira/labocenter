@@ -1,0 +1,23 @@
+{
+  "name": "@labocenter/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Configuración compartida del workspace (TS, ESLint, Prettier)",
+  "type": "module",
+  "exports": {
+    "./eslint": "./eslint.config.js",
+    "./prettier": "./prettier.config.js",
+    "./tsconfig.base.json": "./tsconfig.base.json"
+  },
+  "files": [
+    "eslint.config.js",
+    "prettier.config.js",
+    "tsconfig.base.json"
+  ],
+  "dependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
+    "typescript-eslint": "^8.19.1"
+  }
+}

@@ -1,0 +1,23 @@
+# Servicios de desarrollo. En Fase 0 sólo se necesita PostgreSQL.
+# Los contenedores de api/web y Nginx se añaden en la Fase 8.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: labocenter-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: labocenter
+      POSTGRES_PASSWORD: labocenter
+      POSTGRES_DB: labocenter
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labocenter -d labocenter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:

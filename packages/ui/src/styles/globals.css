@@ -1,0 +1,104 @@
+/*
+ * Design tokens del sistema (ver docs/04-sistema-componentes.md).
+ * Tailwind v4: los tokens son variables CSS mapeadas a utilidades vía @theme.
+ * Usar SIEMPRE tokens semánticos (bg-background, text-foreground, ...),
+ * nunca colores crudos, para que el dark mode funcione sin reescribir.
+ *
+ * Este archivo NO importa "tailwindcss"; lo hace la app que lo consume
+ * (apps/web/app/app.css) para evitar dobles importaciones.
+ */
+
+/* Variante de dark mode basada en la clase .dark del <html>. */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.75rem;
+
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(222 47% 11%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222 47% 11%);
+
+  /* Azul clínico Labocenter: confianza médica, alto contraste. */
+  --primary: hsl(201 96% 32%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --muted: hsl(210 40% 96%);
+  --muted-foreground: hsl(215 16% 47%);
+
+  --accent: hsl(187 92% 38%);
+  --accent-foreground: hsl(0 0% 100%);
+
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(201 96% 32%);
+}
+
+.dark {
+  --background: hsl(222 47% 11%);
+  --foreground: hsl(210 40% 98%);
+
+  --card: hsl(222 47% 13%);
+  --card-foreground: hsl(210 40% 98%);
+
+  --primary: hsl(199 89% 48%);
+  --primary-foreground: hsl(222 47% 11%);
+
+  --muted: hsl(217 33% 17%);
+  --muted-foreground: hsl(215 20% 65%);
+
+  --accent: hsl(187 85% 53%);
+  --accent-foreground: hsl(222 47% 11%);
+
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(217 33% 24%);
+  --input: hsl(217 33% 24%);
+  --ring: hsl(199 89% 48%);
+}
+
+/* Mapeo de tokens a utilidades Tailwind (bg-background, text-primary, ...). */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Foco visible accesible (WCAG): anillo con el token --ring. */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}

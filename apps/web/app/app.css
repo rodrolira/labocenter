@@ -1,0 +1,12 @@
+/*
+ * Hoja de estilos raíz de la app.
+ * 1) Carga Tailwind v4.
+ * 2) Carga los tokens/dark mode del design system (@labocenter/ui).
+ * 3) Declara las fuentes de contenido para que Tailwind genere las
+ *    utilidades usadas tanto en la app como en el paquete de UI.
+ */
+@import "tailwindcss";
+@import "@labocenter/ui/styles.css";
+
+@source "./**/*.{ts,tsx}";
+@source "../node_modules/@labocenter/ui/src/**/*.{ts,tsx}";

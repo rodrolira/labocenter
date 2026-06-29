@@ -1,0 +1,31 @@
+{
+  "name": "labocenter",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Plataforma web de Labocenter (laboratorio clínico e imágenes) - monorepo",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter \"./apps/*\" dev",
+    "build": "pnpm -r --filter \"@labocenter/*\" build",
+    "lint": "pnpm -r --filter \"@labocenter/*\" lint",
+    "typecheck": "pnpm -r --filter \"@labocenter/*\" typecheck",
+    "test": "pnpm -r --filter \"@labocenter/*\" test",
+    "test:e2e": "pnpm -r --filter \"@labocenter/*\" test:e2e",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "db:migrate": "pnpm --filter @labocenter/api db:migrate",
+    "db:seed": "pnpm --filter @labocenter/api db:seed",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}
