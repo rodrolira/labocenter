@@ -4,7 +4,7 @@
  * tokens y dark mode conmutable. En la Fase 3 se reemplaza por el home real.
  */
 import { Button, buttonVariants, ThemeToggle } from "@labocenter/ui";
-import { type MetaFunction } from "react-router";
+import { Link, type MetaFunction } from "react-router";
 import { SITE, whatsappLink } from "~/lib/site";
 
 export const meta: MetaFunction = () => [
@@ -31,7 +31,12 @@ export default function Home() {
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col gap-8 px-6 py-16">
       <header className="flex items-center justify-between">
         <span className="text-lg font-semibold text-primary">{SITE.name}</span>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <Link to="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Iniciar sesión
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
 
       <section className="flex flex-col gap-4">

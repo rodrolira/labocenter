@@ -10,20 +10,25 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@labocenter/contracts": "workspace:*",
     "@labocenter/ui": "workspace:*",
     "@react-router/node": "^7.1.1",
     "@react-router/serve": "^7.1.1",
+    "@tanstack/react-query": "^5.62.11",
     "isbot": "^5.1.20",
+    "react-hook-form": "^7.54.2",
+    "@hookform/resolvers": "^3.10.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^7.1.1"
   },
   "devDependencies": {
     "@labocenter/config": "workspace:*",
+    "@playwright/test": "^1.49.1",
     "@react-router/dev": "^7.1.1",
     "@tailwindcss/vite": "^4.0.0",
     "eslint": "^9.17.0",

@@ -9,8 +9,10 @@ services:
       POSTGRES_USER: labocenter
       POSTGRES_PASSWORD: labocenter
       POSTGRES_DB: labocenter
+    # Host 5433 → contenedor 5432, para evitar choque con un PostgreSQL
+    # instalado localmente que ya ocupa el 5432.
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

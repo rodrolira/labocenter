@@ -19,7 +19,20 @@
       "Bash(pnpm lint *)",
       "Bash(pnpm build *)",
       "Bash(taskkill //F //IM node.exe)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(pnpm docker:up)",
+      "Bash(powershell.exe -NoProfile -Command \"Start-Process -FilePath 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'\")",
+      "Bash(docker info *)",
+      "Bash(docker exec *)",
+      "Bash(pnpm db:generate)",
+      "Bash(pnpm exec *)",
+      "Bash(netstat -ano)",
+      "Bash(pnpm docker:down)",
+      "Bash(pnpm db:seed)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm --filter @labocenter/api test)",
+      "Bash(pnpm --filter @labocenter/web exec playwright install chromium)",
+      "Bash(pnpm --filter @labocenter/web test:e2e)"
     ]
   }
 }

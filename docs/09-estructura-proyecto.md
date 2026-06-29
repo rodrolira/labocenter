@@ -98,11 +98,13 @@ CORS_ORIGIN=http://localhost:5173
 VITE_API_URL=http://localhost:3000/api/v1
 ```
 
-## 5. Scripts raíz (pnpm + Turbo)
+## 5. Scripts raíz (pnpm workspaces)
+
+> La orquestación usa el runner recursivo nativo de pnpm (`pnpm -r`), que respeta el orden topológico de dependencias. Turborepo se difirió en la Fase 0 por un fallo del binario nativo en Windows (ver nota en `CLAUDE.md`); los scripts por paquete no cambian si se reintroduce.
 
 | Script | Acción |
 |--------|--------|
-| `pnpm dev` | Levanta web + api en paralelo (Turbo). |
+| `pnpm dev` | Levanta web + api en paralelo (`pnpm -r --parallel --filter "./apps/*"`). |
 | `pnpm build` | Build de todos los paquetes. |
 | `pnpm lint` / `pnpm typecheck` | Calidad. |
 | `pnpm test` | Vitest en todos los paquetes. |

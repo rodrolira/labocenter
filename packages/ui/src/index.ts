@@ -4,6 +4,8 @@
  */
 export { cn } from "./lib/cn";
 export { Button, buttonVariants, type ButtonProps } from "./atoms/button";
+export { Input, type InputProps } from "./atoms/input";
+export { Label, type LabelProps } from "./atoms/label";
 export {
   ThemeProvider,
   useTheme,

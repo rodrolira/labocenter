@@ -1,0 +1,498 @@
+// Esquema de datos de Labocenter. Ver docs/03-base-de-datos.md para el
+// razonamiento de cada entidad. IDs cuid(), soft-delete donde corresponde,
+// timestamps y enums para estados controlados.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Identidad y Acceso ─────────────────────────
+
+enum RoleName {
+  ADMIN
+  RECEPTION
+  PATIENT
+  DOCTOR
+  MEDICAL_TECHNOLOGIST
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  rut           String?   @unique
+  phone         String?
+  isActive      Boolean   @default(true)
+  emailVerified DateTime?
+  lastLoginAt   DateTime?
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  patientProfile PatientProfile?
+  doctorProfile  DoctorProfile?
+  staffProfile   StaffProfile?
+
+  sessions       Session[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]           @relation("ActorAudit")
+  passwordResets PasswordResetToken[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([rut])
+  @@index([roleId])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        RoleName         @unique
+  description String?
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  // formato "recurso:accion", p.ej. "appointment:create"
+  code        String           @unique
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+// Refresh tokens rotativos (sólo hash). Ver docs/07-autenticacion.md
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  family    String
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([family])
+}
+
+// Token de recuperación de contraseña (sólo hash). docs/07-autenticacion.md §5
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ───────────────────────── Perfiles ─────────────────────────
+
+enum InsuranceType {
+  FONASA
+  ISAPRE
+  PARTICULAR
+}
+
+model PatientProfile {
+  id            String         @id @default(cuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  birthDate     DateTime?
+  gender        String?
+  address       String?
+  insurance     InsuranceType  @default(FONASA)
+  insurancePlan String?
+  medicalRecord MedicalRecord?
+  appointments  Appointment[]
+  orders        Order[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model DoctorProfile {
+  id            String         @id @default(cuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty     String?
+  licenseNumber String?        @unique
+  appointments  Appointment[]
+  scheduleSlots ScheduleSlot[]
+  ordersCreated Order[]        @relation("OrderingDoctor")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model StaffProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position  String?
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ───────────────────────── Historial clínico ─────────────────────────
+
+model MedicalRecord {
+  id        String               @id @default(cuid())
+  patientId String               @unique
+  patient   PatientProfile       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  entries   MedicalRecordEntry[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+}
+
+model MedicalRecordEntry {
+  id        String        @id @default(cuid())
+  recordId  String
+  record    MedicalRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  authorId  String?
+  type      String
+  title     String
+  content   String
+  createdAt DateTime      @default(now())
+
+  @@index([recordId])
+}
+
+// ───────────────────────── Sucursales y agenda ─────────────────────────
+
+model Branch {
+  id           String         @id @default(cuid())
+  name         String
+  slug         String         @unique
+  address      String
+  city         String
+  phone        String?
+  email        String?
+  latitude     Float?
+  longitude    Float?
+  openingHours Json?
+  isActive     Boolean        @default(true)
+  rooms        Room[]
+  appointments Appointment[]
+  staff        StaffProfile[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Room {
+  id        String         @id @default(cuid())
+  branchId  String
+  branch    Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  name      String
+  type      String
+  slots     ScheduleSlot[]
+  createdAt DateTime       @default(now())
+
+  @@index([branchId])
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED
+}
+
+model ScheduleSlot {
+  id          String         @id @default(cuid())
+  roomId      String
+  room        Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  doctorId    String?
+  doctor      DoctorProfile? @relation(fields: [doctorId], references: [id])
+  startAt     DateTime
+  endAt       DateTime
+  status      SlotStatus     @default(AVAILABLE)
+  appointment Appointment?
+  createdAt   DateTime       @default(now())
+
+  @@index([roomId, startAt])
+  @@index([doctorId, startAt])
+  @@index([status, startAt])
+}
+
+// ───────────────────────── Catálogo ─────────────────────────
+
+model Service {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  division    String
+  description String?
+  icon        String?
+  isActive    Boolean        @default(true)
+  categories  ExamCategory[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model ExamCategory {
+  id        String   @id @default(cuid())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String   @unique
+  exams     Exam[]
+  createdAt DateTime @default(now())
+
+  @@index([serviceId])
+}
+
+model Exam {
+  id              String            @id @default(cuid())
+  categoryId      String
+  category        ExamCategory      @relation(fields: [categoryId], references: [id])
+  code            String?           @unique
+  name            String
+  slug            String            @unique
+  description     String?
+  deliveryTime    String?
+  requiresFasting Boolean           @default(false)
+  priceReference  Int?
+  isActive        Boolean           @default(true)
+  instructions    ExamInstruction[]
+  orderItems      OrderItem[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([categoryId])
+  @@index([name])
+}
+
+model ExamInstruction {
+  id        String   @id @default(cuid())
+  examId    String
+  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  step      Int
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([examId])
+}
+
+// ───────────────────────── Reservas / Citas ─────────────────────────
+
+enum AppointmentType {
+  MEDICAL
+  EXAM
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model Appointment {
+  id     String            @id @default(cuid())
+  type   AppointmentType
+  status AppointmentStatus @default(PENDING)
+
+  patientId String
+  patient   PatientProfile @relation(fields: [patientId], references: [id])
+  doctorId  String?
+  doctor    DoctorProfile? @relation(fields: [doctorId], references: [id])
+  branchId  String
+  branch    Branch         @relation(fields: [branchId], references: [id])
+
+  slotId String?       @unique
+  slot   ScheduleSlot? @relation(fields: [slotId], references: [id])
+
+  scheduledAt DateTime
+  notes       String?
+  order       Order?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([patientId])
+  @@index([branchId, scheduledAt])
+  @@index([status])
+}
+
+// ───────────────────────── Órdenes y resultados ─────────────────────────
+
+enum OrderStatus {
+  CREATED
+  IN_PROCESS
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  patientId     String
+  patient       PatientProfile @relation(fields: [patientId], references: [id])
+  appointmentId String?        @unique
+  appointment   Appointment?   @relation(fields: [appointmentId], references: [id])
+  doctorId      String?
+  doctor        DoctorProfile? @relation("OrderingDoctor", fields: [doctorId], references: [id])
+  status        OrderStatus    @default(CREATED)
+  items         OrderItem[]
+  results       Result[]
+  payment       Payment?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([patientId])
+  @@index([status])
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  examId  String
+  exam    Exam   @relation(fields: [examId], references: [id])
+  price   Int?
+
+  @@index([orderId])
+}
+
+enum ResultStatus {
+  PENDING
+  VALIDATED
+  PUBLISHED
+}
+
+model Result {
+  id               String       @id @default(cuid())
+  orderId          String
+  order            Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status           ResultStatus @default(PENDING)
+  // Código público para verificación de autenticidad (reemplaza :8199)
+  verificationCode String       @unique
+  validatedById    String?
+  publishedAt      DateTime?
+  files            ResultFile[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([orderId])
+  @@index([verificationCode])
+}
+
+model ResultFile {
+  id         String   @id @default(cuid())
+  resultId   String
+  result     Result   @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  fileName   String
+  storageKey String
+  mimeType   String
+  sizeBytes  Int
+  checksum   String?
+  createdAt  DateTime @default(now())
+
+  @@index([resultId])
+}
+
+// ───────────────────────── Pagos (preparado Transbank) ─────────────────────────
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  MANUAL
+  TRANSBANK
+}
+
+model Payment {
+  id         String          @id @default(cuid())
+  orderId    String          @unique
+  order      Order           @relation(fields: [orderId], references: [id])
+  amount     Int
+  currency   String          @default("CLP")
+  status     PaymentStatus   @default(PENDING)
+  provider   PaymentProvider @default(MANUAL)
+  externalId String?
+  paidAt     DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
+
+// ───────────────────────── Notificaciones ─────────────────────────
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  IN_APP
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  READ
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   NotificationChannel
+  status    NotificationStatus  @default(QUEUED)
+  subject   String?
+  body      String
+  metadata  Json?
+  sentAt    DateTime?
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([userId, status])
+}
+
+// ───────────────────────── Auditoría ─────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("ActorAudit", fields: [actorId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  ip         String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

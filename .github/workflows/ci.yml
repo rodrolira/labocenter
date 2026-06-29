@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-# Cancela ejecuciones previas del mismo ref para ahorrar minutos.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -15,6 +14,26 @@ jobs:
   quality:
     name: Lint · Typecheck · Test · Build
     runs-on: ubuntu-latest
+
+    # PostgreSQL para los tests de integración de repositorios (Fase 1).
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: labocenter
+          POSTGRES_PASSWORD: labocenter
+          POSTGRES_DB: labocenter
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U labocenter -d labocenter"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://labocenter:labocenter@localhost:5432/labocenter?schema=public
+
     steps:
       - uses: actions/checkout@v4
 
@@ -32,14 +51,63 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      - name: Generar cliente Prisma
+        run: pnpm --filter @labocenter/api db:generate
+
+      - name: Migrar y sembrar la base de datos
+        run: |
+          pnpm --filter @labocenter/api db:migrate:deploy
+          pnpm --filter @labocenter/api db:seed
+
       - name: Lint
         run: pnpm lint
 
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Tests unitarios
+      - name: Tests unitarios e integración
         run: pnpm test
 
       - name: Build
         run: pnpm build
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: labocenter
+          POSTGRES_PASSWORD: labocenter
+          POSTGRES_DB: labocenter
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U labocenter -d labocenter"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CI: "true"
+      DATABASE_URL: postgresql://labocenter:labocenter@localhost:5432/labocenter?schema=public
+      VITE_API_URL: http://localhost:3000/api/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @labocenter/api db:generate
+      - name: Migrar y sembrar
+        run: |
+          pnpm --filter @labocenter/api db:migrate:deploy
+          pnpm --filter @labocenter/api db:seed
+      - name: Instalar navegadores Playwright
+        run: pnpm --filter @labocenter/web exec playwright install --with-deps chromium
+      - name: Ejecutar E2E
+        run: pnpm --filter @labocenter/web test:e2e

@@ -5,7 +5,8 @@
  * - Envuelve la app con ThemeProvider para el modo claro/oscuro.
  */
 import { ThemeProvider, themeInitScript } from "@labocenter/ui";
-import { type ReactNode } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { type ReactNode, useState } from "react";
 import {
   Links,
   Meta,
@@ -15,12 +16,13 @@ import {
   type LinksFunction,
 } from "react-router";
 import stylesheet from "./app.css?url";
+import { makeQueryClient } from "./lib/query-client";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
 ];
 
-export function Layout({ children }: { children: ReactNode }) {
+export function Layout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
@@ -41,9 +43,13 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
+  // Una instancia de QueryClient por carga de app (estable entre renders).
+  const [queryClient] = useState(makeQueryClient);
   return (
-    <ThemeProvider>
-      <Outlet />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Outlet />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

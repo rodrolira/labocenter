@@ -23,21 +23,21 @@ export function ThemeProvider({
   children,
   defaultTheme = "light",
 }: {
-  children: React.ReactNode;
-  defaultTheme?: Theme;
+  readonly children: React.ReactNode;
+  readonly defaultTheme?: Theme;
 }) {
   // Inicialización perezosa: en cliente toma la decisión real (localStorage o
   // preferencia del sistema) para coincidir con el script anti-parpadeo y no
   // provocar mismatch de hidratación; en servidor usa el valor por defecto.
   const [theme, setThemeState] = React.useState<Theme>(() => {
-    if (typeof window === "undefined") return defaultTheme;
+    if (globalThis.window === undefined) return defaultTheme;
     try {
-      const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+      const stored = globalThis.window.localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === "light" || stored === "dark") return stored;
     } catch {
       // localStorage no disponible; se cae al cálculo por preferencia.
     }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
+    return globalThis.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
   });
@@ -47,7 +47,7 @@ export function ThemeProvider({
     const root = document.documentElement;
     root.classList.toggle("dark", theme === "dark");
     try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+      globalThis.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
       // localStorage puede no estar disponible (modo privado); se ignora.
     }

@@ -4,3 +4,6 @@
  */
 export * from "./common/response";
 export * from "./health";
+export * from "./auth/permissions";
+export * from "./auth/rut";
+export * from "./auth/schemas";

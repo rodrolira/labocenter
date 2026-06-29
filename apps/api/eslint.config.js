@@ -1,3 +1,1 @@
-import { baseConfig } from "@labocenter/config/eslint";
-
-export default baseConfig;
+export {baseConfig as default} from "@labocenter/config/eslint";
